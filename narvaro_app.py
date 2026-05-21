@@ -204,27 +204,37 @@ def student_save(room_id):
         
     room_data = rooms[room_id]
     
-    # Dubbelkoll vid inskick (endast kakan)
+    # 1. Vanlig fuskspärr (kakan)
     if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"]:
-        return "<h1>Nekat!</h1><p>Redan registrerad.</p>", 403
+        return "<h1>Nekat!</h1><p>Du har redan registrerat närvaro.</p>", 403
         
     namn = request.form.get('namn')
     klass = request.form.get('klass')
     token = request.form.get('token')
     
-    if room_data["totp"].verify(token, valid_window=2):
+    # NYHET: Skapa en lista för använda koder i rummet om den inte redan finns
+    if "used_tokens" not in room_data:
+        room_data["used_tokens"] = []
+        
+    # NYHET: Kolla om exakt denna kod/länk REDAN har använts av någon annan
+    if token in room_data["used_tokens"]:
+        return "<h1>Länken har redan använts!</h1><p>Den här QR-koden har redan förbrukats av en annan elev. Skanna den nya koden på skärmen.</p>", 403
+    
+    # UPPDATERAD: valid_window=0 betyder att koden dör DIREKT när klockan slår om (max 30 sekunder)
+    if room_data["totp"].verify(token, valid_window=0):
         student_info = {"namn": namn, "klass": klass}
+        
         if student_info not in room_data["log"]:
             room_data["log"].append(student_info)
+            # NYHET: Spara koden i listan över förbrukade koder
+            room_data["used_tokens"].append(token)
             
-        # Spara lektions-ID i mobilens kaka
         session.permanent = True
         session[f'last_lesson_{room_id}'] = room_data["lesson_id"]
         
         return f"<h1>Tack {namn}!</h1><p>Din närvaro i {klass} är sparad.</p>"
     else:
-        return "<h1>Koden hann gå ut!</h1><p>Be läraren om en ny QR-kod.</p>", 403
-
+        return "<h1>Koden är för gammal!</h1><p>Denna länk har gått ut. Skanna den nya QR-koden som visas på tavlan just nu.</p>", 403
 
 @app.route('/nollstall/<room_id>', methods=['POST'])
 def reset_room(room_id):
