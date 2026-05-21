@@ -104,14 +104,29 @@ STUDENT_HTML = """
         <label>Ditt fullständiga namn:</label><br>
         <input type="text" name="namn" required style="padding:8px; width:200px;"><br><br>
         
-        <label>Välj din klass:</label><br>
+        <label>Ange din klass:</label><br>
         <select name="klass" required style="padding:8px; width:212px;">
-            <option value="" disabled selected>-- Välj klass --</option>
-            <option value="TE21">TE21</option>
-            <option value="TE22">TE22</option>
-            <option value="TE23">TE23</option>
-            <option value="NA21">NA21</option>
-            <option value="NA22">NA22</option>
+            <option value="NA1A">NA1A</option>
+            <option value="NA1B">NA1B</option>
+            <option value="NA1C">NA1C</option>
+            <option value="SA1">SA1</option>
+            <option value="EK1A">EK1A</option>
+            <option value="EK1B">EK1B</option>
+            <option value="EK1C">EK1C</option>
+            <option value="NA2A">NA2A</option>
+            <option value="NA2B">NA2B</option>
+            <option value="NA2C">NA2C</option>
+            <option value="SA2">SA2</option>
+            <option value="EK2A">EK2A</option>
+            <option value="EK2B">EK2B</option>
+            <option value="EK2C">EK2C</option>
+            <option value="NA3A">NA3A</option>
+            <option value="NA3B">NA3B</option>
+            <option value="NA3C">NA3C</option>
+            <option value="SA3">SA3</option>
+            <option value="EK3A">EK3A</option>
+            <option value="EK3B">EK3B</option>
+            <option value="EK3C">EK3C</option>
         </select><br><br>
         
         <button type="submit" style="background:#0275d8; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold;">Sänd närvaro</button>
