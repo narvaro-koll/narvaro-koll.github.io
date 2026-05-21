@@ -28,67 +28,113 @@ def generate_room_id():
 
 # --- HTML TEMPLATES (Inbakade som strängar för att göra det enkelt att köra) ---
 
+# --- NYA DESIGNADE HTML TEMPLATES ---
+
 INDEX_HTML = """
 <!DOCTYPE html>
-<html>
-<head><title>Närvaro Start</title><meta charset="utf-8"></head>
-<body style="font-family:sans-serif; text-align:center; padding-top:50px;">
-    <h1>Digital Närvaroregistrering</h1>
-    <p>För lärare: Starta en ny session för din klass utan några nedladdningar.</p>
-    <a href="/skapa-rum" style="background:#5cb85c; color:white; padding:15px 25px; text-decoration:none; font-weight:bold; border-radius:5px;">🏫 Skapa nytt digitalt klassrum</a>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Digital Närvaro - Start</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+    <div class="card shadow-sm p-4 text-center" style="max-width: 500px; width: 100%; border-radius: 12px;">
+        <div class="fs-1 mb-3">🏫</div>
+        <h1 class="h3 mb-3 fw-bold text-dark">Digital Närvaro</h1>
+        <p class="text-muted mb-4">Starta en smidig, fusksäker närvaroregistrering för din klass direkt i webbläsaren.</p>
+        <a href="/skapa-rum" class="btn btn-primary btn-lg w-100 fw-bold" style="border-radius: 8px;">Skapa digitalt klassrum</a>
+    </div>
 </body>
 </html>
 """
 
 TEACHER_HTML = """
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-    <title>Lärare - Rum {{ room_id }}</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lärare - Rum {{ room_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body style="font-family:sans-serif; margin:30px;">
-    <h1>Klassrumskod: <span style="color:#0275d8;">{{ room_id }}</span> (Lektion {{ room_data.lesson_id }})</h1>
-    
-    <div style="display:flex; gap:50px;">
-        <div style="text-align:center; border:2px solid #ccc; padding:20px; border-radius:8px;">
-            <h3>SKANNA FÖR NÄRVARO</h3>
-            <img id="qr-box" src="/qr/{{ room_id }}" width="300" style="border:1px solid #eee;"><br>
-            <p><i>Koden uppdateras live i bakgrunden</i></p>
-            
-            <form action="/nollstall/{{ room_id }}" method="post" onsubmit="return confirm('Vill du tömma listan och starta nästa lektion?');">
-                <button type="submit" style="background:#d9534f; color:white; padding:10px; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">🔄 Starta ny lektion (Nollställ)</button>
-            </form>
+<body class="bg-light" style="min-height: 100vh; padding: 20px;">
+    <div class="container-fluid bg-white shadow-sm rounded-3 p-4 mb-4" style="max-width: 1400px;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <span class="badge bg-primary mb-1">Aktiv Session</span>
+                <h1 class="h2 fw-bold m-0 text-dark">Klassrum: <span class="text-primary">{{ room_id }}</span></h1>
+            </div>
+            <div class="text-md-end">
+                <span class="fs-5 text-muted d-block mb-2">Lektionsnummer: <strong>{{ room_data.lesson_id }}</strong></span>
+                <form action="/nollstall/{{ room_id }}" method="post" onsubmit="return confirm('Vill du tömma listan och starta nästa lektion?');">
+                    <button type="submit" class="btn btn-outline-danger fw-bold btn-sm">🔄 Starta ny lektion (Nollställ)</button>
+                </form>
+            </div>
         </div>
+    </div>
 
-        <div style="flex-grow:1;">
-            <h2>Registrerade elever ({% if sorted_log %}{{ sorted_log|length }}{% else %}0{% endif %})</h2>
-            <hr>
-            {% if not sorted_log %}
-                <p>Inga elever har registrerat sig ännu.</p>
-            {% else %}
-                {% set current_klass = list %}
-                {% for student in sorted_log %}
-                    {% if student.klass != current_klass %}
-                        <h3>Klass: {{ student.klass }}</h3>
-                        <ul>
-                    {% endif %}
-                    <li>{{ student.namn }}</li>
-                    {% if loop.last or sorted_log[loop.index].klass != student.klass %}
-                        </ul>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
+    <div class="container-fluid" style="max-width: 1400px;">
+        <div class="row g-4">
+            <div class="col-12 col-lg-5 text-center">
+                <div class="card shadow-sm border-0 p-4 h-100 d-flex flex-column align-items-center justify-content-center" style="border-radius: 12px;">
+                    <h3 class="fw-bold mb-3 text-secondary">SKANNA FÖR NÄRVARO</h3>
+                    <div class="p-3 bg-light rounded-3 mb-3" style="border: 1px solid #e3e6f0;">
+                        <img id="qr-box" src="/qr/{{ room_id }}" class="img-fluid" style="max-width: 320px; width: 100%;">
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <div class="spinner-grow spinner-grow-sm text-success" role="status"></div>
+                        <small>QR-koden uppdateras live var 30:e sekund för att förhindra fusk</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-7">
+                <div class="card shadow-sm border-0 p-4 h-100" style="border-radius: 12px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="fw-bold m-0 text-dark">Registrerade elever</h3>
+                        <span class="badge bg-success fs-6">Totalt: {% if sorted_log %}{{ sorted_log|length }}{% else %}0{% endif %}</span>
+                    </div>
+                    <div class="table-responsive">
+                        {% if not sorted_log %}
+                            <div class="text-center text-muted py-5">
+                                <div class="fs-2 mb-2">💤</div>
+                                <p>Inga elever har registrerat sig ännu på den här lektionen.</p>
+                            </div>
+                        {% else %}
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Namn</th>
+                                        <th>Klass</th>
+                                        <th class="text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in sorted_log %}
+                                    <tr>
+                                        <td class="fw-semibold text-dark">{{ student.namn }}</td>
+                                        <td><span class="badge bg-secondary">{{ student.klass }}</span></td>
+                                        <td class="text-end text-success fw-bold">🟢 Registrerad</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Uppdaterar QR-bilden var 5:e sekund så att TOTP-token hålls färsk
+        // Uppdaterar QR-bilden var 5:e sekund
         setInterval(function(){
             document.getElementById('qr-box').src = "/qr/{{ room_id }}?cache=" + new Date().getTime();
         }, 5000);
         
-        // Laddar om hela sidan var 10:e sekund för att läraren ska se nya elever som loggar in
+        // Laddar om sidan var 10:e sekund för att se nya elever
         setInterval(function(){
             location.reload();
         }, 10000);
@@ -99,43 +145,41 @@ TEACHER_HTML = """
 
 STUDENT_HTML = """
 <!DOCTYPE html>
-<html>
-<head><title>Elev Registrering</title><meta charset="utf-8"></head>
-<body style="font-family:sans-serif; margin:20px;">
-    <h1>Närvaroregistrering - Rum {{ room_id }}</h1>
-    <form action="/spara/{{ room_id }}" method="post">
-        <input type="hidden" name="token" value="{{ token }}">
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Elev - Registrering</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 15px;">
+    <div class="card shadow-sm p-4 text-center" style="max-width: 450px; width: 100%; border-radius: 12px; border-top: 5px solid #0d6efd;">
+        <h1 class="h3 fw-bold text-dark mb-1">Registrera Närvaro</h1>
+        <p class="text-muted mb-4 small">Klassrumskod: <strong class="text-primary">{{ room_id }}</strong></p>
         
-        <label>Ditt fullständiga namn:</label><br>
-        <input type="text" name="namn" required style="padding:8px; width:200px;"><br><br>
-        
-        <label>Ange din klass:</label><br>
-        <select name="klass" required style="padding:8px; width:212px;">
-            <option value="NA1A">NA1A</option>
-            <option value="NA1B">NA1B</option>
-            <option value="NA1C">NA1C</option>
-            <option value="SA1">SA1</option>
-            <option value="EK1A">EK1A</option>
-            <option value="EK1B">EK1B</option>
-            <option value="EK1C">EK1C</option>
-            <option value="NA2A">NA2A</option>
-            <option value="NA2B">NA2B</option>
-            <option value="NA2C">NA2C</option>
-            <option value="SA2">SA2</option>
-            <option value="EK2A">EK2A</option>
-            <option value="EK2B">EK2B</option>
-            <option value="EK2C">EK2C</option>
-            <option value="NA3A">NA3A</option>
-            <option value="NA3B">NA3B</option>
-            <option value="NA3C">NA3C</option>
-            <option value="SA3">SA3</option>
-            <option value="EK3A">EK3A</option>
-            <option value="EK3B">EK3B</option>
-            <option value="EK3C">EK3C</option>
-        </select><br><br>
-        
-        <button type="submit" style="background:#0275d8; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold;">Sänd närvaro</button>
-    </form>
+        <form action="/spara/{{ room_id }}" method="post" class="text-start">
+            <input type="hidden" name="token" value="{{ token }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary">Ditt fullständiga namn</label>
+                <input type="text" name="namn" class="form-control form-control-lg" placeholder="Förnamn Efternamn" required style="border-radius: 8px;">
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary">Välj din klass</label>
+                <select name="klass" class="form-select form-select-lg" required style="border-radius: 8px;">
+                    <option value="" disabled selected>-- Välj i listan --</option>
+                    <option value="TE21">TE21</option>
+                    <option value="TE22">TE22</option>
+                    <option value="TE23">TE23</option>
+                    <option value="NA21">NA21</option>
+                    <option value="NA22">NA22</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" style="border-radius: 8px;">Sänd närvaro ✅</button>
+        </form>
+    </div>
 </body>
 </html>
 """
