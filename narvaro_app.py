@@ -1,3 +1,6 @@
+# hnanterar endast kakor, ej ip-adress
+
+
 from flask import Flask, request, render_template_string, session, redirect, url_for, send_file
 import pyotp
 import qrcode
@@ -14,12 +17,7 @@ app.permanent_session_lifetime = timedelta(hours=12)
 # { "RUMS_ID": { "secret": X, "totp": X, "log": [], "ips": [], "lesson_id": 1 } }
 rooms = {}
 
-def get_client_ip():
-    """Hämtar elevens riktiga IP-adress, även bakom Renders dörrvakt"""
-    if request.headers.get('X-Forwarded-For'):
-        # Tar den första IP-adressen i listan (elevens riktiga)
-        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    return request.remote_addr
+
 
 def generate_room_id():
     """Genererar en unik kod på 4 bokstäver, t.ex. 'XFQA'"""
@@ -156,7 +154,6 @@ def create_room():
         "secret": secret,
         "totp": pyotp.TOTP(secret, interval=30),
         "log": [],
-        "ips": [],
         "lesson_id": 1
     }
     return redirect(url_for('teacher_dashboard', room_id=room_id))
@@ -192,10 +189,10 @@ def student_join(room_id):
         return "<h1>Detta rum existerar inte längre.</h1>", 404
         
     room_data = rooms[room_id]
-    user_ip = get_client_ip()  # 👈 UPPDATERAD HÄR
     
-    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"] or user_ip in room_data["ips"]:
-        return "<h1>Redan registrerad!</h1><p>Den här enheten har redan skickat närvaro för denna lektion.</p>"
+    # Kollar ENDAST sessions-kakan nu 
+    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"]:
+        return "<h1>Redan registrerad!</h1><p>Du har redan registrerat närvaro på den här lektionen.</p>"
         
     token = request.args.get('token')
     return render_template_string(STUDENT_HTML, room_id=room_id, token=token)
@@ -206,9 +203,9 @@ def student_save(room_id):
         return "Fel", 404
         
     room_data = rooms[room_id]
-    user_ip = get_client_ip()  # 👈 UPPDATERAD HÄR
     
-    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"] or user_ip in room_data["ips"]:
+    # Dubbelkoll vid inskick (endast kakan)
+    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"]:
         return "<h1>Nekat!</h1><p>Redan registrerad.</p>", 403
         
     namn = request.form.get('namn')
@@ -219,8 +216,8 @@ def student_save(room_id):
         student_info = {"namn": namn, "klass": klass}
         if student_info not in room_data["log"]:
             room_data["log"].append(student_info)
-            room_data["ips"].append(user_ip)
             
+        # Spara lektions-ID i mobilens kaka
         session.permanent = True
         session[f'last_lesson_{room_id}'] = room_data["lesson_id"]
         
@@ -228,12 +225,12 @@ def student_save(room_id):
     else:
         return "<h1>Koden hann gå ut!</h1><p>Be läraren om en ny QR-kod.</p>", 403
 
+
 @app.route('/nollstall/<room_id>', methods=['POST'])
 def reset_room(room_id):
     if room_id in rooms:
         rooms[room_id]["lesson_id"] += 1
-        rooms[room_id]["log"] = []
-        rooms[room_id]["ips"] = []
+        rooms[room_id]["log"] = []  # Tömmer bara listan med namn
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
 import os  # Lägg till denna rad högst upp i din fil om den inte redan finns!
