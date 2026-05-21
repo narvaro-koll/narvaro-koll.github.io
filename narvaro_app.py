@@ -14,6 +14,13 @@ app.permanent_session_lifetime = timedelta(hours=12)
 # { "RUMS_ID": { "secret": X, "totp": X, "log": [], "ips": [], "lesson_id": 1 } }
 rooms = {}
 
+def get_client_ip():
+    """Hämtar elevens riktiga IP-adress, även bakom Renders dörrvakt"""
+    if request.headers.get('X-Forwarded-For'):
+        # Tar den första IP-adressen i listan (elevens riktiga)
+        return request.headers.get('X-Forwarded-For').split(',')[0].strip()
+    return request.remote_addr
+
 def generate_room_id():
     """Genererar en unik kod på 4 bokstäver, t.ex. 'XFQA'"""
     while True:
@@ -185,9 +192,8 @@ def student_join(room_id):
         return "<h1>Detta rum existerar inte längre.</h1>", 404
         
     room_data = rooms[room_id]
-    user_ip = request.remote_addr
+    user_ip = get_client_ip()  # 👈 UPPDATERAD HÄR
     
-    # Fuskspärrar baserat på unikt rum och lektion
     if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"] or user_ip in room_data["ips"]:
         return "<h1>Redan registrerad!</h1><p>Den här enheten har redan skickat närvaro för denna lektion.</p>"
         
@@ -200,7 +206,7 @@ def student_save(room_id):
         return "Fel", 404
         
     room_data = rooms[room_id]
-    user_ip = request.remote_addr
+    user_ip = get_client_ip()  # 👈 UPPDATERAD HÄR
     
     if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"] or user_ip in room_data["ips"]:
         return "<h1>Nekat!</h1><p>Redan registrerad.</p>", 403
