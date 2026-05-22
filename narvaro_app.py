@@ -16,10 +16,17 @@ rooms = {}
 def index():
     return render_template('index.html')
 
-# 2. SKAPA NYTT KLASSRUM
-@app.route('/skapa-rum')
+# 2. SKAPA NYTT KLASSRUM (UPPDATERAD)
+@app.route('/skapa-rum', methods=['POST'])
 def create_room():
-    room_id = "TE22"  # Detta blir namnet på ditt rum
+    # Hämtar namnet som läraren skrev i textfältet
+    room_id = request.form.get('room_id', '').strip()
+    
+    # Om läraren glömde skriva något (eller fuskade), sätt ett standardnamn
+    if not room_id:
+        room_id = "Standardrum"
+        
+    # Skapa rummet om det inte redan finns
     if room_id not in rooms:
         secret = pyotp.random_base32()
         rooms[room_id] = {
@@ -27,7 +34,7 @@ def create_room():
             "totp": pyotp.TOTP(secret, interval=30),
             "log": [],
             "lesson_id": 1,
-            "used_tokens": []  # Här sparas använda engångskoder
+            "used_tokens": []
         }
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
