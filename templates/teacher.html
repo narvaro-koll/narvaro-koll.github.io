@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lärare - Rum {{ room_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f4f8 !important; }
+        .bg-kungsbla { background-color: #0284c7 !important; }
+        .text-kungsbla { color: #0284c7 !important; }
+        .card-custom { border-radius: 16px; border: none; }
+        
+        /* NYTT: Gör så att muspekaren blir en hand när man håller över QR-koden */
+        .clickable-qr {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .clickable-qr:hover {
+            transform: scale(1.02); /* Lite visuell feedback vid hover */
+        }
+
+        /* NYTT: Stil för den mörka bakgrunden när QR-koden är förstorad */
+        #qr-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* Mörk halvtransparent bakgrund */
+            display: none; /* Gömd som standard */
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Lägger sig över absolut allt annat */
+            cursor: pointer;
+        }
+        #qr-overlay img {
+            max-width: 85vh; /* Gör koden så stor som möjligt baserat på skärmhöjd */
+            width: 90%;
+            border-radius: 16px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body style="min-height: 100vh; padding: 20px;">
+
+    <div id="qr-overlay" onclick="toggleQR()">
+        <img id="qr-overlay-img" src="/qr/{{ room_id }}">
+    </div>
+
+    <div class="container-fluid bg-kungsbla text-white shadow rounded-3 p-4 mb-4" style="max-width: 1400px; border-radius: 16px !important;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <span class="badge bg-white text-dark mb-1 fw-bold">PORTAL</span>
+                <h1 class="h2 fw-bold m-0">Klassrum: <span>{{ room_id }}</span></h1>
+            </div>
+            <div class="text-md-end">
+                <span class="fs-5 text-white-50 d-block mb-2">Lektion ID: <strong>{{ room_data.lesson_id }}</strong></span>
+                <form action="/nollstall/{{ room_id }}" method="post" onsubmit="return confirm('Vill du tömma listan och starta nästa lektion?');">
+                    <button type="submit" class="btn btn-danger fw-bold btn-sm shadow-sm">🔄 Nollställ för nästa lektion</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid" style="max-width: 1400px;">
+        <div class="row g-4">
+            
+            <div class="col-12 col-lg-5 text-center">
+                <div class="card card-custom shadow p-4 h-100 d-flex flex-column align-items-center justify-content-center">
+                    <h3 class="fw-bold mb-1 text-secondary tracking-wide">SKANNA MED MOBILEN</h3>
+                    <p class="text-muted small mb-3">💡 Klicka på koden för att göra den till helskärm</p>
+                    
+                    <div class="p-3 bg-light rounded-3 mb-3 shadow-inner clickable-qr" style="border: 2px solid #e2e8f0;" onclick="toggleQR()">
+                        <img id="qr-box" src="/qr/{{ room_id }}" class="img-fluid" style="max-width: 320px; width: 100%; border-radius: 8px;">
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-muted">
+                        <div class="spinner-grow spinner-grow-sm text-success" role="status"></div>
+                        <small class="fw-medium">Koden uppdateras live (engångslänkar)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-7">
+                <div class="card card-custom shadow p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="fw-bold m-0 text-dark">Närvarande elever</h3>
+                        <span class="badge bg-success fs-6 px-3 py-2" style="border-radius: 8px;">Totalt: {% if sorted_log %}{{ sorted_log|length }}{% else %}0{% endif %}</span>
+                    </div>
+                    <div class="table-responsive">
+                        {% if not sorted_log %}
+                            <div class="text-center text-muted py-5">
+                                <div class="fs-1 mb-2">💤</div>
+                                <p class="fw-medium">Inga registreringar ännu på den här lektionen.</p>
+                            </div>
+                        {% else %}
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="py-3">Namn</th>
+                                        <th class="py-3">Klass</th>
+                                        <th class="py-3 text-end">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in sorted_log %}
+                                    <tr>
+                                        <td class="fw-bold text-dark py-3">{{ student.namn }}</td>
+                                        <td><span class="badge bg-secondary px-2 py-1">{{ student.klass }}</span></td>
+                                        <td class="text-end text-success fw-bold">🟢 Registrerad</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // NYTT: Funktion för att öppna/stänga helskärmsläget
+        function toggleQR() {
+            var overlay = document.getElementById('qr-overlay');
+            if (overlay.style.display === 'flex') {
+                overlay.style.display = 'none';
+            } else {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        // UPPDATERAD: Uppdaterar både vanliga bilden OCH helskärmsbilden var 5:e sekund
+        setInterval(function(){
+            var newSrc = "/qr/{{ room_id }}?cache=" + new Date().getTime();
+            document.getElementById('qr-box').src = newSrc;
+            document.getElementById('qr-overlay-img').src = newSrc;
+        }, 5000);
+        
+        // Laddar om sidan i bakgrunden var 10:e sekund (men INTE om läraren har helskärm öppet!)
+        setInterval(function(){
+            var overlay = document.getElementById('qr-overlay');
+            if (overlay.style.display !== 'flex') {
+                location.reload();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
