@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Elev - Registrering</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f0f4f8 !important; }
+        .text-kungsbla { color: #0284c7 !important; }
+        .btn-vinrod {
+            background-color: #881337 !important;
+            border-color: #881337 !important;
+            color: white !important;
+        }
+        .btn-vinrod:hover {
+            background-color: #6b0d2b !important;
+            border-color: #6b0d2b !important;
+        }
+        .card-custom {
+            max-width: 450px;
+            width: 100%;
+            border-radius: 16px;
+            border: none;
+            border-top: 6px solid #0284c7;
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 15px;">
+    <div class="card card-custom shadow p-4 text-center">
+        <h1 class="h3 fw-bold text-dark mb-1">Anmäl Närvaro</h1>
+        <p class="text-muted mb-4 small">Klassrum: <strong class="text-kungsbla">{{ room_id }}</strong></p>
+        
+        <form action="/spara/{{ room_id }}" method="post" class="text-start">
+            <input type="hidden" name="token" value="{{ token }}">
+            
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary">Ditt fullständiga namn</label>
+                <input type="text" name="namn" class="form-control form-control-lg" placeholder="Förnamn Efternamn" required style="border-radius: 8px;">
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-secondary">Välj din klass</label>
+                <select name="klass" class="form-select form-select-lg" required style="border-radius: 8px;">
+                    <option value="" disabled selected>-- Välj i listan --</option>
+                    <option value="TE21">TE21</option>
+                    <option value="TE22">TE22</option>
+                    <option value="TE23">TE23</option>
+                    <option value="NA21">NA21</option>
+                    <option value="NA22">NA22</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-vinrod btn-lg w-100 fw-bold py-3" style="border-radius: 10px;">Sänd närvaro ✅</button>
+        </form>
+    </div>
+</body>
+</html>
