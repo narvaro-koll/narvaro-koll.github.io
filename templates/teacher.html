@@ -11,16 +11,16 @@
         .text-kungsbla { color: #0284c7 !important; }
         .card-custom { border-radius: 16px; border: none; }
         
-        /* NYTT: Gör så att muspekaren blir en hand när man håller över QR-koden */
+        /* muspekaren blir en hand när man håller över QR-koden */
         .clickable-qr {
             cursor: pointer;
             transition: transform 0.2s;
         }
         .clickable-qr:hover {
-            transform: scale(1.02); /* Lite visuell feedback vid hover */
+            transform: scale(1.02); 
         }
 
-        /* NYTT: Stil för den mörka bakgrunden när QR-koden är förstorad */
+        /* Stil för den mörka bakgrunden när QR-koden är förstorad */
         #qr-overlay {
             position: fixed;
             top: 0;
@@ -35,7 +35,7 @@
             cursor: pointer;
         }
         #qr-overlay img {
-            max-width: 85vh; /* Gör koden så stor som möjligt baserat på skärmhöjd */
+            max-width: 85vh; /* Gör koden så stor som möjligt */
             width: 90%;
             border-radius: 16px;
             background-color: white;
@@ -123,7 +123,7 @@
     </div>
 
     <script>
-        // NYTT: Funktion för att öppna/stänga helskärmsläget
+        // Funktion för att öppna/stänga helskärmsläget
         function toggleQR() {
             var overlay = document.getElementById('qr-overlay');
             if (overlay.style.display === 'flex') {
@@ -133,14 +133,14 @@
             }
         }
 
-        // UPPDATERAD: Uppdaterar både vanliga bilden OCH helskärmsbilden var 5:e sekund
+        // Uppdaterar både vanliga bilden OCH helskärmsbilden var 5:e sekund
         setInterval(function(){
             var newSrc = "/qr/{{ room_id }}?cache=" + new Date().getTime();
             document.getElementById('qr-box').src = newSrc;
             document.getElementById('qr-overlay-img').src = newSrc;
         }, 5000);
         
-        // Laddar om sidan i bakgrunden var 10:e sekund (men INTE om läraren har helskärm öppet!)
+        // Laddar om sidan i bakgrunden var 30:e sekund 
         setInterval(function(){
             var overlay = document.getElementById('qr-overlay');
             if (overlay.style.display !== 'flex') {
