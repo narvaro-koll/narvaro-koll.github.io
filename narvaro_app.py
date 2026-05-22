@@ -1,4 +1,6 @@
-# kollar endas kakor, version som ska användas med separata html filer
+# note to self: kollar endas kakor, version som ska användas med separata html filer
+
+
 
 import math
 import os
@@ -50,7 +52,7 @@ def create_room():
         }
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
-# 3. LÄRARENS SKÄRM (PROJEKTORN)
+# 3. LÄRARENS SKÄRM (det som syns på projektorn)
 @app.route('/rum/<room_id>')
 def teacher_dashboard(room_id):
     if room_id not in rooms:
@@ -59,13 +61,13 @@ def teacher_dashboard(room_id):
     sorted_log = sorted(room_data["log"], key=lambda x: x['namn'])
     return render_template('teacher.html', room_id=room_id, room_data=room_data, sorted_log=sorted_log)
 
-# 4. GENERERA QR-KOD (LÄNKAR DIREKT TILL GOOGLE-INLOGGNINGEN)
+# 4. GENERERA QR-KOD 
 @app.route('/qr/<room_id>')
 def serve_qr(room_id):
     if room_id not in rooms:
         return "Hittades inte", 404
         
-    # QR-koden skickar nu eleven direkt till vår login-rutt med rätt rum laddat
+    # QR-koden skickar eleven direkt till login sidan med rätt klassrum laddat
     join_url = f"{request.host_url}login/{room_id}"
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -79,14 +81,14 @@ def serve_qr(room_id):
     
     return send_file(img_io, mimetype='image/png')
 
-# 5. SKICKA ELEVEN TILL GOOGLE FOR INLOGGNING
+# 5. SKICKA ELEVEN TILL GOOGLE (inloggning)
 @app.route('/login/<room_id>')
 def login(room_id):
     session['target_room'] = room_id  # Kom ihåg vilket rum eleven ska till
     redirect_uri = url_for('login_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
-# 6. GOOGLE SKICKAR TILLBAKA ELEVEN HIT EFTER GODKÄND INLOGGNING
+# 6. GOOGLE SKICKAR TILLBAKA ELEVEN EFTER GODKÄND INLOGGNING
 @app.route('/login/callback')
 def login_callback():
     token = google.authorize_access_token()
@@ -99,19 +101,19 @@ def login_callback():
     room_id = session.get('target_room', 'Standardrum')
     return redirect(url_for('student_join', room_id=room_id))
 
-# 7. ELEVENS REGRISTRERINGSSIDA (EFTER INLOGGNING)
+# 7. ELEVENS REGRISTRERINGSSIDA (efter inloggning)
 @app.route('/anslut/<room_id>')
 def student_join(room_id):
     if room_id not in rooms:
         return "<h1>Klassrummet stängdes.</h1>", 404
         
-    # Säkerställ att de faktiskt har loggat in med Google först
+    # Säkerställ att de faktiskt har loggat in med Google 
     if 'user_email' not in session:
         return redirect(url_for('login', room_id=room_id))
         
     room_data = rooms[room_id]
     
-    # FUSKSPÄRR: Kolla om denna Google-e-post redan finns i närvarolistan
+    # Fuskspärr: Kolla om denna Google e-post redan finns i närvarolistan
     for student in room_data["log"]:
         if student.get("email") == session['user_email']:
             return f"<h1>Redan registrerad!</h1><p>Kontot {session['user_email']} har redan anmält närvaro på den här lektionen.</p>"
@@ -137,7 +139,7 @@ def student_save(room_id):
             
     klass = request.form.get('klass')
     
-    # Vi sparar namnet som Google verifierat + klassen + e-posten
+    # Sppara namnet som Google verifierat + klassen + e-posten
     student_info = {
         "namn": session['user_name'],
         "klass": klass,
