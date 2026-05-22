@@ -23,10 +23,15 @@
     <div class="card shadow p-4 text-center" style="max-width: 500px; width: 100%; border-radius: 16px; border: none;">
         <div class="fs-1 mb-2">🏫</div>
         <h1 class="h3 mb-3 fw-bold text-kungsbla">Digital Närvaro</h1>
-        <p class="text-muted mb-4">Starta närvaroregistrering för din klass</p>
-        <a href="/skapa-rum" class="btn btn-vinrod btn-lg w-100 fw-bold py-3" style="border-radius: 10px;">Skapa digitalt klassrum</a>
+        <p class="text-muted mb-4">Ange sal eller kursnamn för att starta en ny närvaroregistrering.</p>
+        
+        <form action="/skapa-rum" method="post" class="text-start">
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-secondary">Klassrum / Kurs</label>
+                <input type="text" name="room_id" class="form-control form-control-lg" placeholder="Ex: Stenbeck, Hi1b" required style="border-radius: 8px;">
+            </div>
+            <button type="submit" class="btn btn-vinrod btn-lg w-100 fw-bold py-3" style="border-radius: 10px;">Skapa digitalt klassrum</button>
+        </form>
     </div>
 </body>
 </html>
-
-<!--rad 13: Starta närvaroregistrering för din klass"-->
