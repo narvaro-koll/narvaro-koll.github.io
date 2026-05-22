@@ -1,44 +1,53 @@
+# kollar endas kakor, version som ska användas med separata html filer
+
 import os
 from flask import Flask, render_template, request, session, redirect, url_for, send_file
-import pyotp
+from authlib.integrations.flask_client import OAuth
 import qrcode
 from io import BytesIO
 
 app = Flask(__name__)
-# Den här nyckeln behövs för att spara sessions-kakorna på elevernas mobiler
 app.secret_key = "MIN_SUPERHEMLIGA_PROJEKTNYCKEL_123!"
 
-# Här sparas all data om klassrummen i minnet medan servern körs
+# GOOGLE OAUTH KONFIGURATION
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id='317746992046-9si2oe199ii2i33cd62q05ff21brd2nq.apps.googleusercontent.com',
+    client_secret='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',
+    access_token_url='https://oauth2.googleapis.com/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    client_kwargs={'scope': 'openid email profile'},
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration'
+)
+
+# Databas i minnet
 rooms = {}
 
-# 1. STARTSIDAN
+# 1. STARTSIDAN (LÄRARE)
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# 2. SKAPA NYTT KLASSRUM (UPPDATERAD)
+# 2. SKAPA NYTT KLASSRUM
 @app.route('/skapa-rum', methods=['POST'])
 def create_room():
-    # Hämtar namnet som läraren skrev i textfältet
     room_id = request.form.get('room_id', '').strip()
-    
-    # Om läraren glömde skriva något (eller fuskade), sätt ett standardnamn
     if not room_id:
         room_id = "Standardrum"
         
-    # Skapa rummet om det inte redan finns
     if room_id not in rooms:
-        secret = pyotp.random_base32()
         rooms[room_id] = {
-            "secret": secret,
-            "totp": pyotp.TOTP(secret, interval=30),
             "log": [],
-            "lesson_id": 1,
-            "used_tokens": []
+            "lesson_id": 1
         }
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
-# 3. LÄRARENS INSTRUMENTPANEL (PROJEKTORN)
+# 3. LÄRARENS SKÄRM (PROJEKTORN)
 @app.route('/rum/<room_id>')
 def teacher_dashboard(room_id):
     if room_id not in rooms:
@@ -47,93 +56,101 @@ def teacher_dashboard(room_id):
     sorted_log = sorted(room_data["log"], key=lambda x: x['namn'])
     return render_template('teacher.html', room_id=room_id, room_data=room_data, sorted_log=sorted_log)
 
-# 4. GENERERA QR-KODEN (BILDEN)
+# 4. GENERERA QR-KOD (LÄNKAR DIREKT TILL GOOGLE-INLOGGNINGEN)
 @app.route('/qr/<room_id>')
 def serve_qr(room_id):
     if room_id not in rooms:
         return "Hittades inte", 404
         
-    room_data = rooms[room_id]
-    token = room_data["totp"].now()  # Hämtar den aktuella 6-siffriga koden just nu
+    # QR-koden skickar nu eleven direkt till vår login-rutt med rätt rum laddat
+    join_url = f"{request.host_url}login/{room_id}"
     
-    # Skapar länken dynamiskt baserat på om du kör lokalt eller på Render
-    join_url = f"{request.host_url}anslut/{room_id}?token={token}"
-    
-    # Ritar QR-koden
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(join_url)
     qr.make(fit=True)
     
     img = qr.make_image(fill_color="black", back_color="white")
-    
-    # Sparar bilden i serverns tillfälliga minne och skickar den till webbläsaren
     img_io = BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
     
     return send_file(img_io, mimetype='image/png')
 
-# 5. ELEVENS ANKOMSTSIDA (NÄR DE SKANNAT)
+# 5. SKICKA ELEVEN TILL GOOGLE FOR INLOGGNING
+@app.route('/login/<room_id>')
+def login(room_id):
+    session['target_room'] = room_id  # Kom ihåg vilket rum eleven ska till
+    redirect_uri = url_for('login_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+# 6. GOOGLE SKICKAR TILLBAKA ELEVEN HIT EFTER GODKÄND INLOGGNING
+@app.route('/login/callback')
+def login_callback():
+    token = google.authorize_access_token()
+    user_info = google.get('userinfo').json()
+    
+    # Spara elevens Google-info i sessionen
+    session['user_email'] = user_info['email']
+    session['user_name'] = user_info['name']
+    
+    room_id = session.get('target_room', 'Standardrum')
+    return redirect(url_for('student_join', room_id=room_id))
+
+# 7. ELEVENS REGRISTRERINGSSIDA (EFTER INLOGGNING)
 @app.route('/anslut/<room_id>')
 def student_join(room_id):
     if room_id not in rooms:
-        return "<h1>Detta rum existerar inte längre.</h1>", 404
+        return "<h1>Klassrummet stängdes.</h1>", 404
+        
+    # Säkerställ att de faktiskt har loggat in med Google först
+    if 'user_email' not in session:
+        return redirect(url_for('login', room_id=room_id))
         
     room_data = rooms[room_id]
     
-    # Fuskspärr: Har eleven redan registrerat sig på den här lektionen?
-    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"]:
-        return "<h1>Redan registrerad!</h1><p>Du har redan skickat in närvaro för denna lektion.</p>"
-        
-    token = request.args.get('token')
-    return render_template('student.html', room_id=room_id, token=token)
+    # FUSKSPÄRR: Kolla om denna Google-e-post redan finns i närvarolistan
+    for student in room_data["log"]:
+        if student.get("email") == session['user_email']:
+            return f"<h1>Redan registrerad!</h1><p>Kontot {session['user_email']} har redan anmält närvaro på den här lektionen.</p>"
+            
+    return render_template('student.html', room_id=room_id)
 
-# 6. SPARA ELEVENS NÄRVARO (NÄR DE TRYCKER PÅ SÄND)
+# 8. SPARA NÄRVARON
 @app.route('/spara/<room_id>', methods=['POST'])
 def student_save(room_id):
     if room_id not in rooms:
         return "Fel", 404
         
+    if 'user_email' not in session:
+        return "Nekat! Du måste vara inloggad.", 401
+        
     room_data = rooms[room_id]
+    user_email = session['user_email']
     
-    if session.get(f'last_lesson_{room_id}') == room_data["lesson_id"]:
-        return "<h1>Nekat!</h1><p>Redan registrerad.</p>", 403
-        
-    namn = request.form.get('namn')
-    klass = request.form.get('klass')
-    token = request.form.get('token')
-    
-    # Spärr: Har någon ANNAN elev precis använt exakt denna kod?
-    if token in room_data.get("used_tokens", []):
-        return "<h1>Länken har redan använts!</h1><p>Den här QR-koden har redan förbrukats. Skanna den nya koden på skärmen.</p>", 403
-    
-    # Kontrollera om tidskoden är giltig just nu (valid_window=0 betyder stenhård koll)
-    if room_data["totp"].verify(token, valid_window=0):
-        student_info = {"namn": namn, "klass": klass}
-        
-        if student_info not in room_data["log"]:
-            room_data["log"].append(student_info)
-            room_data["used_tokens"].append(token)  # Förbruka koden permanent
+    # Dubbelkoll vid inskick så ingen fuskar via post-requests
+    for student in room_data["log"]:
+        if student.get("email") == user_email:
+            return "Redan registrerad!", 403
             
-        # Spara lektions-ID i elevens webbläsare (kaka)
-        session.permanent = True
-        session[f'last_lesson_{room_id}'] = room_data["lesson_id"]
-        
-        return f"<h1>Tack {namn}!</h1><p>Din närvaro i {klass} är sparad.</p>"
-    else:
-        return "<h1>Koden är för gammal!</h1><p>Denna länk har gått ut. Skanna den nya QR-koden som visas på tavlan.</p>", 403
+    klass = request.form.get('klass')
+    
+    # Vi sparar namnet som Google verifierat + klassen + e-posten
+    student_info = {
+        "namn": session['user_name'],
+        "klass": klass,
+        "email": user_email
+    }
+    room_data["log"].append(student_info)
+    
+    return f"<h1>Tack {session['user_name']}!</h1><p>Din närvaro i {klass} är sparad via {user_email}.</p>"
 
-# 7. NOLLSTÄLL RUMMET (FÖR NÄSTA LEKTION)
-@app.route('/nollstall/{{ room_id }}', methods=['POST'])
+# 9. NOLLSTÄLL KLASSRUMMET
 @app.route('/nollstall/<room_id>', methods=['POST'])
 def reset_room(room_id):
     if room_id in rooms:
-        rooms[room_id]["lesson_id"] += 1
         rooms[room_id]["log"] = []
-        rooms[room_id]["used_tokens"] = []  # Tömmer de förbrukade koderna
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
-# STARTA SERVERN
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
