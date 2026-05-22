@@ -32,11 +32,9 @@
         <p class="text-muted mb-4 small">Klassrum: <strong class="text-kungsbla">{{ room_id }}</strong></p>
         
         <form action="/spara/{{ room_id }}" method="post" class="text-start">
-            <input type="hidden" name="token" value="{{ token }}">
-            
             <div class="mb-3">
-                <label class="form-label fw-semibold text-secondary">Ditt fullständiga namn</label>
-                <input type="text" name="namn" class="form-control form-control-lg" placeholder="Förnamn Efternamn" required style="border-radius: 8px;">
+                <label class="form-label fw-semibold text-secondary">Inloggad som</label>
+                <input type="text" class="form-control form-control-lg bg-light text-muted" value="{{ session.user_name }}" readonly style="border-radius: 8px;">
             </div>
             
             <div class="mb-4">
@@ -67,7 +65,7 @@
                 </select>
             </div>
             
-            <button type="submit" class="btn btn-vinrod btn-lg w-100 fw-bold py-3" style="border-radius: 10px;">Sänd närvaro ✅</button>
+            <button type="submit" class="btn btn-vinrod btn-lg w-100 fw-bold py-3" style="border-radius: 10px;">Bekräfta närvaro ✅</button>
         </form>
     </div>
 </body>
