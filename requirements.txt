@@ -3,3 +3,5 @@ pyotp
 qrcode
 pillow
 gunicorn
+Authlib
+requests
