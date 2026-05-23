@@ -48,7 +48,7 @@ def create_room():
     if room_id not in rooms:
         secret = pyotp.random_base32()
         rooms[room_id] = {
-            "totp": pyotp.TOTP(secret, interval=15), # QR-koden är giltig i 15 sekunder
+            "totp": pyotp.TOTP(secret, interval=10), # QR-koden är giltig i 15 sekunder
             "log": [],
             "lesson_id": 1
         }
@@ -114,7 +114,7 @@ def login(room_id):
     
     # FUSKSPÄRR 1: Är länken för gammal?
     # valid_window=1 ger lite marginal så att de hinner skanna
-    if not token or not room_data["totp"].verify(token, valid_window=1):
+    if not token or not room_data["totp"].verify(token, valid_window=0):
         return "<h1>Länken har gått ut! ⏰</h1><p>Du var för långsam, eller så har någon skickat en gammal länk till dig. Skanna den senaste QR-koden på tavlan.</p>", 403
 
     # Om tiden är okej, släpp vidare till Google!
