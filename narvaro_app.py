@@ -197,13 +197,12 @@ def student_save(room_id):
     return f"<h1>Tack {session['user_name']}!</h1><p>Din närvaro är sparad.</p>"
 
 
-# 9. NOLLSTÄLL KLASSRUMMET
+# 9. NOLLSTÄLL KLASSRUMMET 
 @app.route('/nollstall/<room_id>', methods=['POST'])
 def reset_room(room_id):
     if room_id in rooms:
+        # 1. Töm listan med namn
         rooms[room_id]["log"] = []
+        # 2. Öka lektionsnumret så att elevernas gamla kakor blir ogiltiga!
+        rooms[room_id]["lesson_id"] += 1
     return redirect(url_for('teacher_dashboard', room_id=room_id))
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
