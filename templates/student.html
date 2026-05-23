@@ -26,10 +26,10 @@
         }
     </style>
 </head>
-<body class="d-flex align-items-center justify-content-center" style="min-height: 100vh; padding: 15px;">
-    <div class="card card-custom shadow p-4 text-center">
-        <h1 class="h3 fw-bold text-dark mb-1">Anmäl Närvaro</h1>
-        <p class="text-muted mb-4 small">Klassrum: <strong class="text-kungsbla">{{ room_id }}</strong></p>
+
+<body class="d-flex align-items-center justify-content-center bg-light" style="min-height: 100vh;">
+    <div class="card shadow p-4 text-center" style="max-width: 400px; width: 100%; border-radius: 16px; border: none;">
+        <h2 class="h4 mb-4 fw-bold text-kungsbla">Registrera närvaro</h2>
         
         <form action="/spara/{{ room_id }}" method="post" class="text-start">
             <div class="mb-3">
@@ -42,26 +42,26 @@
                 <select name="klass" class="form-select form-select-lg" required style="border-radius: 8px;">
                     <option value="" disabled selected>-- Välj i listan --</option>
                     <option value="NA1A">NA1A</option>
-                <option value="NA1B">NA1B</option>
-                <option value="NA1C">NA1C</option>
-                <option value="SA1">SA1</option>
-                <option value="EK1A">EK1A</option>
-                <option value="EK1B">EK1B</option>
-                <option value="EK1C">EK1C</option>
-                <option value="NA2A">NA2A</option>
-                <option value="NA2B">NA2B</option>
-                <option value="NA2C">NA2C</option>
-                <option value="SA2">SA2</option>
-                <option value="EK2A">EK2A</option>
-                <option value="EK2B">EK2B</option>
-                <option value="EK2C">EK2C</option>
-                <option value="NA3A">NA3A</option>
-                <option value="NA3B">NA3B</option>
-                <option value="NA3C">NA3C</option>
-                <option value="SA3">SA3</option>
-                <option value="EK3A">EK3A</option>
-                <option value="EK3B">EK3B</option>
-                <option value="EK3C">EK3C</option>
+                    <option value="NA1B">NA1B</option>
+                    <option value="NA1C">NA1C</option>
+                    <option value="SA1">SA1</option>
+                    <option value="EK1A">EK1A</option>
+                    <option value="EK1B">EK1B</option>
+                    <option value="EK1C">EK1C</option>
+                    <option value="NA2A">NA2A</option>
+                    <option value="NA2B">NA2B</option>
+                    <option value="NA2C">NA2C</option>
+                    <option value="SA2">SA2</option>
+                    <option value="EK2A">EK2A</option>
+                    <option value="EK2B">EK2B</option>
+                    <option value="EK2C">EK2C</option>
+                    <option value="NA3A">NA3A</option>
+                    <option value="NA3B">NA3B</option>
+                    <option value="NA3C">NA3C</option>
+                    <option value="SA3">SA3</option>
+                    <option value="EK3A">EK3A</option>
+                    <option value="EK3B">EK3B</option>
+                    <option value="EK3C">EK3C</option>
                 </select>
             </div>
             
@@ -69,4 +69,3 @@
         </form>
     </div>
 </body>
-</html>
