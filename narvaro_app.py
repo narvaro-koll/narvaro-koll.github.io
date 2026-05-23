@@ -54,13 +54,30 @@ def create_room():
         }
     return redirect(url_for('teacher_dashboard', room_id=room_id))
 
-# 3. LÄRARENS SKÄRM (det som syns på projektorn)
+# 3. LÄRARENS SKÄRM (projektorn)
 @app.route('/rum/<room_id>')
 def teacher_dashboard(room_id):
     if room_id not in rooms:
         return "Rummet hittades inte", 404
+        
     room_data = rooms[room_id]
-    sorted_log = sorted(room_data["log"], key=lambda x: x['namn'])
+    
+    # NY SORTERINGSFUNKTION:
+    def sortera_elever(student):
+        klass = student.get('klass', '')
+        hela_namnet = student.get('namn', '')
+        
+        # Plockar ut sista ordet i namnet (efternamnet) och gör det till små bokstäver
+        # så att "Andersson" och "andersson" sorteras likadant.
+        efternamn = hela_namnet.split()[-1].lower() if hela_namnet else ''
+        
+        # Returnerar en "tuple" (klass, efternamn) vilket säger till Python:
+        # Sortera ALLTID på klass först, och inom samma klass: sortera på efternamnet.
+        return (klass, efternamn)
+        
+    # Sortera listan med vår nya logik
+    sorted_log = sorted(room_data["log"], key=sortera_elever)
+    
     return render_template('teacher.html', room_id=room_id, room_data=room_data, sorted_log=sorted_log)
 
 # 4. GENERERA QR-KOD 
@@ -130,7 +147,7 @@ def student_join(room_id):
     if session.get(f'device_registered_{room_id}') == room_data["lesson_id"]:
         return "<h1>Enhet spärrad! 📱</h1><p>Den här mobilen har redan använts för att registrera närvaro på denna lektion. Du kan inte logga in flera personer från samma enhet.</p>"
 
-    # Säkerställ att de faktiskt har loggat in med Google först
+    # Säkerställ att de har loggat in med Google först
     if 'user_email' not in session:
         return redirect(url_for('login', room_id=room_id))
         
@@ -142,7 +159,7 @@ def student_join(room_id):
     return render_template('student.html', room_id=room_id)
 
 
-# 8. SPARA NÄRVARON (MED GPS OCH ENHETSSPÄRR)
+# 8. SPARA NÄRVARON 
 @app.route('/spara/<room_id>', methods=['POST'])
 def student_save(room_id):
     if room_id not in rooms:
@@ -156,19 +173,6 @@ def student_save(room_id):
 
     if 'user_email' not in session:
         return "Nekat! Du måste vara inloggad.", 401
-        
-    # --- GPS-KONTROLL ---
-    try:
-        student_lat = float(request.form.get('lat'))
-        student_lon = float(request.form.get('lon'))
-    except (TypeError, ValueError):
-        return "<h1>GPS saknas!</h1><p>Du måste tillåta att webbläsaren ser din plats.</p>", 403
-
-    distance = calculate_distance(SCHOOL_LAT, SCHOOL_LON, student_lat, student_lon)
-    
-    if distance > MAX_DISTANCE_METERS:
-        return f"<h1>Nekat! Du är för långt bort.</h1><p>Du är {int(distance)} meter från skolan. Max tillåtet avstånd är {MAX_DISTANCE_METERS} meter.</p>", 403
-    # --------------------
 
     user_email = session['user_email']
     
@@ -190,7 +194,7 @@ def student_save(room_id):
     session.permanent = True
     session[f'device_registered_{room_id}'] = room_data["lesson_id"]
     
-    return f"<h1>Tack {session['user_name']}!</h1><p>Din närvaro är sparad (Avstånd till skolan: {int(distance)}m).</p>"
+    return f"<h1>Tack {session['user_name']}!</h1><p>Din närvaro är sparad.</p>"
 
 
 # 9. NOLLSTÄLL KLASSRUMMET
