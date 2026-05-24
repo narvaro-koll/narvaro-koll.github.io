@@ -20,18 +20,18 @@
             transform: scale(1.02); 
         }
 
-        /* Stil för den mörka bakgrunden när QR-koden är förstorad */
+      
         #qr-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); /* Mörk halvtransparent bakgrund */
+            background-color: rgba(0, 0, 0, 0.85); 
             display: none; /* Gömd som standard */
             justify-content: center;
             align-items: center;
-            z-index: 9999; /* Lägger sig över absolut allt annat */
+            z-index: 9999; /* Lägger sig över allt annat */
             cursor: pointer;
         }
         #qr-overlay img {
@@ -140,7 +140,7 @@
             document.getElementById('qr-overlay-img').src = newSrc;
         }, 5000);
         
-        // Laddar om sidan i bakgrunden var 30:e sekund 
+        // Laddar om sidan i bakgrunden var 10e sekund 
         setInterval(function(){
             var overlay = document.getElementById('qr-overlay');
             if (overlay.style.display !== 'flex') {
