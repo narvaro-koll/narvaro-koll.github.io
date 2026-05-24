@@ -62,20 +62,17 @@ def teacher_dashboard(room_id):
         
     room_data = rooms[room_id]
     
-    # NY SORTERINGSFUNKTION:
+    # sorterar efter klasslista
     def sortera_elever(student):
         klass = student.get('klass', '')
         hela_namnet = student.get('namn', '')
         
-        # Plockar ut sista ordet i namnet (efternamnet) och gör det till små bokstäver
-        # så att "Andersson" och "andersson" sorteras likadant.
-        efternamn = hela_namnet.split()[-1].lower() if hela_namnet else ''
         
-        # Returnerar en "tuple" (klass, efternamn) vilket säger till Python:
-        # Sortera ALLTID på klass först, och inom samma klass: sortera på efternamnet.
+        efternamn = hela_namnet.split()[-1].lower() if hela_namnet else ''
+
         return (klass, efternamn)
         
-    # Sortera listan med vår nya logik
+
     sorted_log = sorted(room_data["log"], key=sortera_elever)
     
     return render_template('teacher.html', room_id=room_id, room_data=room_data, sorted_log=sorted_log)
@@ -113,7 +110,6 @@ def login(room_id):
     room_data = rooms[room_id]
     
     # FUSKSPÄRR 1: Är länken för gammal?
-    # valid_window=1 ger lite marginal så att de hinner skanna
     if not token or not room_data["totp"].verify(token, valid_window=0):
         return "<h1>Länken har gått ut! ⏰</h1><p>Du var för långsam, eller så har någon skickat en gammal länk till dig. Skanna den senaste QR-koden på tavlan.</p>", 403
 
@@ -190,7 +186,7 @@ def student_save(room_id):
     }
     room_data["log"].append(student_info)
     
-    # SPARA I KAKAN ATT MOBILEN HAR REGISTRERAT SIG
+    # spara i kakan att mobilen har regristrerat sig
     session.permanent = True
     session[f'device_registered_{room_id}'] = room_data["lesson_id"]
     
@@ -203,6 +199,6 @@ def reset_room(room_id):
     if room_id in rooms:
         # 1. Töm listan med namn
         rooms[room_id]["log"] = []
-        # 2. Öka lektionsnumret så att elevernas gamla kakor blir ogiltiga!
+        # 2. Öka lektionsnumret så att elevernas gamla kakor blir ogiltiga
         rooms[room_id]["lesson_id"] += 1
     return redirect(url_for('teacher_dashboard', room_id=room_id))
